@@ -1,0 +1,81 @@
+app.py Code:
+
+import numpy as np
+from flask import Flask,render_template,url_for,request,jsonify
+import pandas as pd 
+
+import pickle
+
+# load the model from disk
+model=pickle.load(open('random_forest_regression_model.pkl', 'rb'))
+app = Flask(__name__)
+
+@app.route('/')
+def root():
+   return render_template('login.html')
+
+@app.route('/validate',methods=['GET', 'POST'])
+def validate():
+  if request.method=='POST':
+     u=str(request.form['username'])
+     p=str(request.form['password'])
+     
+  if u=="Admin" and p=="admin123":
+     return render_template('home.html',u=u)
+  else:
+     msg="Error message:Please Enter a valid user name or password"
+     return render_template('login.html',msg=msg)
+
+@app.route('/home.html')
+def index():
+     return render_template('home.html')
+
+@app.route('/',methods=['GET'])
+def Home():
+    return render_template('home.html')
+
+@app.route('/logout')
+def logout():
+   return render_template('login.html')
+
+@app.route('/aqi_chart')
+def AQI():
+   return "<img src='static/AQI.png'/>"
+   #return render_template('aqi_chart.html')
+
+@app.route('/predict',methods=['POST'])
+@app.route("/predict", methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        T= float(request.form['T'])
+        TM= float(request.form['TM'])
+        Tm= float(request.form['Tm'])
+        SLP= float(request.form['SLP'])
+        H= int(request.form['H'])
+        VV= float(request.form['VV'])
+        V= float(request.form['V'])
+        VM= float(request.form['VM'])
+        prediction=model.predict([[T,TM,Tm,SLP,H,VV,V,VM]])
+        output=round(prediction[0],2)
+        if output<=50:
+         piechart="static/Good.jpg"
+         return render_template('home.html', prediction_text='AirQualityindex is  $ {}'.format(output),piechart=piechart)
+        elif output>50 and output<=100:
+          piechart="static/Satisfactory.jpg"
+
+         return render_template('home.html', prediction_text='AirQualityindex is $ {}'.format(output),piechart=piechart)
+        elif output>100 and output<=200:
+         piechart="static/Moderate.jpg"
+         return render_template('home.html', prediction_text='AirQualityindex is $ {}'.format(output),piechart=piechart)
+        else:
+         piechart="static/Poor.jpg"
+         return render_template('home.html', prediction_text='AirQualityindex is $ {}'.format(output),piechart=piechart)
+
+         return render_template('home.html', prediction_text='AirQualityindex is $ {}'.format(output),piechart=piechart) 
+   else:
+         piechart="static/General.jpg"
+         return render_template('home.html',piechart=piechart)
+
+if __name__ == '__main__':
+	app.run(debug=True)
+
